@@ -1,0 +1,52 @@
+#include <Servo.h>
+#include <Keyboard.h>  // Include for arrow key definitions
+
+const int ESC_PWM = 9;  // Digital pin connected to ESC signal
+Servo esc;              // Create a Servo object for the ESC
+
+int speed = 2000;        // Initial speed (neutral)
+bool forward = true;    // Flag for forward/reverse direction
+
+void setup() {
+  Serial.begin(9600);
+  Serial.println("T200 Thruster Control");
+
+  esc.attach(ESC_PWM);
+  esc.writeMicroseconds(1500);  // Send initial "stop" signal
+  delay(7000);                 // Wait for ESC initialization
+
+  pinMode(9, OUTPUT);  // Set pin 9 as output for analog control
+}
+
+void loop() {
+  if (Serial.available() > 0) {
+    char key = Serial.read();
+    if (key == 'f') {
+      forward = true;
+    } else if (key == 'r') {
+      forward = false;
+    } else {
+      // Handle other key presses (optional)
+    }
+  }
+  
+
+  if (Serial.available() > 0) {
+    int analogValue = Serial.parseInt();  // Read analog value from serial monitor (optional)
+    if (analogValue >= 0 && analogValue <= 255) {
+      speed = map(analogValue, 0, 255, 1100, 1900);  // Map analog value to PWM range (adjust as needed)
+      if (!forward) {
+        speed = 2048 - speed;  // Invert speed for reverse direction (adjust if needed)
+      }
+      esc.writeMicroseconds(speed);
+    } else {
+      Serial.println("Invalid analog value (0-255)");
+    }
+  }
+
+  Serial.print("Speed (PWM): ");
+  Serial.print(speed);
+  Serial.print(", Direction: ");
+  Serial.println(forward ? "Forward" : "Reverse");
+  delay(100);
+}
